@@ -150,6 +150,7 @@ def compileFile(binderCppFileName, execName):
     # If compilation failed, then print "Compilation failed"
     # Do not forget to add -std=gnu++11 flag to your compilation line
     GPlusPlusBinary = "/usr/bin/g++"
+    global FILE_NAME
 
     if not os.path.exists(GPlusPlusBinary):
         print "compileFile: G++ program does not exists at " + GPlusPlusBinary
@@ -161,8 +162,8 @@ def compileFile(binderCppFileName, execName):
         print "\n\nCompilation failed"
         sys.exit(-1)
 
-    if not os.path.exists("codeArray.h"):
-        print "compileFile: codeArray.h file does not exist"
+    if not os.path.exists(FILE_NAME):
+        print "compileFile: " + FILE_NAME + " does not exist"
         print "\n\nCompilation failed"
         sys.exit(-1)
 
@@ -188,14 +189,13 @@ def compileFile(binderCppFileName, execName):
         # We have a success here
         if wait_code == 0:
             print "\n\nCompilation succeeded"
-
+        else:
+            print "\n\nCompilation failed"
     except ValueError as msg:
         print "compileFile: Popen error encountered " + msg
         print "\n\nCompilation failed"
         sys.exit(-1)
 
-
-    pass
 
 generateHeaderFile(sys.argv[1:], FILE_NAME)
 compileFile("binderbackend.cpp", "bound")
