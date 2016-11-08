@@ -1,11 +1,13 @@
+#===============================================================================
+# Script name:  binder.py
+# Description:  A simple program that will read in the binary hex data
+#               of a list of programs and then compile them into one large
+#               executable
+#===============================================================================
 import os
 import sys
 from subprocess import call
-import os
 from subprocess import Popen, PIPE
-
-# The file name
-FILE_NAME = "codearray.h";
 
 #===============================================================================
 # Returns the hexidecimal dump of a particular binary file
@@ -31,7 +33,6 @@ def getHexDump(execPath):
         print "getHexDump: Binary <" + HexDumpBinary + "> does not exist !"
         sys.exit(-1)
 
-    # TODO:
     # 1. Use popen() in order to run hexdump and grab the hexadecimal bytes of the program.
     # 2. If hexdump ran successfully, return the string retrieved. Otherwise, return None.
     # The command for hexdump to return the list of bytes in the program in C++ byte format
@@ -47,8 +48,8 @@ def getHexDump(execPath):
     # Use Popen to get the data result
     try:
 
-        # Use the popendemo to call HexDump
-        process = Popen(CMD, stdout = PIPE)
+        # Create a process using popen
+        process = Popen(CMD, stdout = PIPE, stderr = PIPE)
 
         # Get the result into two variables output and error
         output, err = process.communicate()
@@ -56,11 +57,14 @@ def getHexDump(execPath):
         # Wait until the process completed
         wait_code = process.wait()
 
-        # We have a success here
+        # We have a success here pass the output of HEX back to retVal
         if wait_code == 0:
             retVal = output
+        else:
+            print "Process has error: " + err
+            retVal = None
 
-    except ValueError as msg:
+    except (OSError, ValueError) as msg:
         print "getHexDump: Popen error encountered " + msg
         sys.exit(-1)
 
@@ -75,6 +79,7 @@ def generateHeaderFile(execList, fileName):
 
     # The header file
     headerFile = None
+
     # Open the header file
     try:
         headerFile = open(fileName, "w")
@@ -86,7 +91,7 @@ def generateHeaderFile(execList, fileName):
     progNames = execList
 
     # Number of programs to bind
-    progCount = len(progNames)
+    progCount = 0
 
     # The lengths of programs
     progLens = []
@@ -94,7 +99,7 @@ def generateHeaderFile(execList, fileName):
     # Write the array name to the header file
     headerFile.write("#include <string>\n\n")
     headerFile.write("using namespace std;\n\n")
-    headerFile.write("unsigned char* codeArray[" + str(progCount) + "] = {");
+    headerFile.write("unsigned char* codeArray[] = {\n");
 
     # Loop through each program
     for program in progNames:
@@ -108,27 +113,30 @@ def generateHeaderFile(execList, fileName):
             continue
 
         # Else, we will process the hexdump to get the program length
-        length = len(hexdump.split(",")) - 1
+        # We substract one because of the extra comma in hex
+        progLen = str(len(hexdump.split(",")) - 1)
 
         # Now we write it
-        progString = "\n\nnew unsigned char[" + str(length) + "] {" + hexdump + "},"
+        progString = "\nnew unsigned char[" + progLen + "] {" + hexdump + "},"
         headerFile.write(progString)
 
         # Append the program Lengths
-        progLens.append(length)
+        progLens.append(progLen)
 
 
     # Once we done with writing all the hex we will need to close the codeArray
     headerFile.write("\n};")
 
+    # Combine the progLens into a string separate by comma
+    length = ",".join(progLens)
+
+    # Get the final Program Count that we wrote
+    progCount = len(progLens)
+
     # Add array to containing program lengths to the header file
-    headerFile.write("\n\nunsigned int programLengths[] = {")
-    for length in progLens:
-        headerFile.write("\n" + str(length) + ",")
+    headerFile.write("\n\nunsigned int programLengths[] = {" + length + "};")
 
-    headerFile.write("\n};")
-
-    # TODO: Write the number of programs.
+    # Write the number of programs.
     headerFile.write("\n\n#define NUM_BINARIES " +  str(progCount))
 
     # Close the header file
@@ -145,20 +153,21 @@ def compileFile(binderCppFileName, execName):
     print("Compiling...")
 
     # Run the process
-    # TODO: run the g++ compiler in order to compile backbinder.cpp
+    # run the g++ compiler in order to compile backbinder.cpp
     # If the compilation succeeds, print "Compilation succeeded"
     # If compilation failed, then print "Compilation failed"
     # Do not forget to add -std=gnu++11 flag to your compilation line
+
     GPlusPlusBinary = "/usr/bin/g++"
     global FILE_NAME
 
     if not os.path.exists(GPlusPlusBinary):
-        print "compileFile: G++ program does not exists at " + GPlusPlusBinary
+        print "compileFile: " + GPlusPlusBinary + " does not exists"
         print "\n\nCompilation failed"
         sys.exit(-1)
 
     if not os.path.exists(binderCppFileName):
-        print "compileFile: Binder backend file not exist"
+        print "compileFile: " + binderCppFileName + " does not exist"
         print "\n\nCompilation failed"
         sys.exit(-1)
 
@@ -177,8 +186,8 @@ def compileFile(binderCppFileName, execName):
     # Use Popen to get the data result
     try:
 
-        # Use the popendemo to call HexDump
-        process = Popen(CMD, stdout = PIPE)
+        # Use the popen to call G++ to compile the binder
+        process = Popen(CMD, stdout = PIPE, stderr = PIPE)
 
         # Get the result into two variables output and error
         output, err = process.communicate()
@@ -190,12 +199,19 @@ def compileFile(binderCppFileName, execName):
         if wait_code == 0:
             print "\n\nCompilation succeeded"
         else:
+            print "\n\nError:" + err
             print "\n\nCompilation failed"
-    except ValueError as msg:
+
+    except (OSError,ValueError) as msg:
         print "compileFile: Popen error encountered " + msg
         print "\n\nCompilation failed"
         sys.exit(-1)
 
+#===============================================================================
+# Call the function here
+#===============================================================================
+# The file name
+FILE_NAME = "codearray.h";
 
 generateHeaderFile(sys.argv[1:], FILE_NAME)
 compileFile("binderbackend.cpp", "bound")
