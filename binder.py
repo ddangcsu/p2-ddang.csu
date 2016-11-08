@@ -210,8 +210,31 @@ def compileFile(binderCppFileName, execName):
 #===============================================================================
 # Call the function here
 #===============================================================================
-# The file name
-FILE_NAME = "codearray.h";
+def cleanupOldFiles(None):
+    global FILE_NAME
+    global OUTPUT_FILE
 
+    if os.path.exists(FILE_NAME):
+        try:
+            os.remove(FILE_NAME)
+        except OSError as msg:
+            print "cleanupOldFiles: " + msg
+
+    if os.path.exists(OUTPUT_FILE):
+        try:
+            os.remove(OUTPUT_FILE)
+        except OSError as msg:
+            print "cleanupOldFiles: " + msg
+
+
+#===============================================================================
+# Call the function here
+#===============================================================================
+# The file name
+FILE_NAME = "codearray.h"
+OUTPUT_FILE = "bound"
+BINDER_BACKEND = "binderbackend.cpp"
+
+cleanupOldFiles()
 generateHeaderFile(sys.argv[1:], FILE_NAME)
-compileFile("binderbackend.cpp", "bound")
+compileFile(BINDER_BACKEND, OUTPUT_FILE)
