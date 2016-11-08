@@ -210,7 +210,7 @@ def compileFile(binderCppFileName, execName):
 #===============================================================================
 # Call the function here
 #===============================================================================
-def cleanupOldFiles(None):
+def cleanupOldFiles():
     global FILE_NAME
     global OUTPUT_FILE
 
