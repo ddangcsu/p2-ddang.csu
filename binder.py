@@ -20,6 +20,8 @@ from subprocess import Popen, PIPE
 #===============================================================================
 def getHexDump(execPath):
 
+    retVal = None
+
     inFile = None
     hexContent = None
     hexString = ''
@@ -27,7 +29,7 @@ def getHexDump(execPath):
     # Check if execPath actually exists
     if not os.path.exists(execPath):
         print "getHexDump2: Path <" + execPath + "> does not exists !"
-        return retVal
+        sys.exit(-1)
 
     try:
         # Open the file for binary read
