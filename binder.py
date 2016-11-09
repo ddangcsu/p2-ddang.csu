@@ -6,6 +6,7 @@
 #===============================================================================
 import os
 import sys
+import binascii
 from subprocess import call
 from subprocess import Popen, PIPE
 
@@ -70,6 +71,49 @@ def getHexDump(execPath):
 
     return retVal
 
+def getHexDump2(execPath):
+
+    inFile = None
+    hexContent = None
+    hexString = None
+
+    # Check if execPath actually exists
+    if not os.path.exists(execPath):
+        print "getHexDump: Path <" + execPath + "> does not exists !"
+        return retVal
+
+    try:
+        # Open the file for binary read
+        inFile = open(execPath, "rb")
+    except (OSError, IOError) as msg:
+        print "getHexDump2: Failed open to read binary data"
+        sys.exit(-1)
+
+    # Read in the binary file and use binascii to convert to hex
+    try:
+        hexContent = binascii.b2a_hex(inFile.read())
+    except (binascii.Error, binascii.Incomplete) as msg:
+        print "getHexDump2: Failed to convert data to hex string"
+        sys.exit(-1)
+
+    # Close the file
+    inFile.close()
+
+    # Check to see if we should continue to format the string
+    if (len(hexContent) == 0):
+        return retVal;
+
+    # Loop through to format the hexContent into C++ bytes
+    hexString = ''
+
+    # Loop through the hexContent and step through each byte
+    for index in range (0, len(hexContent), 2):
+        # We slice the byte using index: index + 2
+        # slice does not include the index + 2
+        hexString += '0x' + hexContent[index:index+2] + ','
+
+    return hexString
+
 #===============================================================================
 # Generates the header file containing an array of executable codes
 # @param execList - the list of executables
@@ -105,7 +149,7 @@ def generateHeaderFile(execList, fileName):
     for program in progNames:
 
         # Get the hexdump of each program
-        hexdump = getHexDump(program)
+        hexdump = getHexDump2(program)
 
         # If hexdump is None it means something else is wrong.  We skip
         # to the next program
