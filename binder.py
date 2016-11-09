@@ -27,7 +27,7 @@ def getHexDump(execPath):
     # Check if execPath actually exists
     if not os.path.exists(execPath):
         print "getHexDump2: Path <" + execPath + "> does not exists !"
-        return retVal
+        sys.exit(-1)
 
     try:
         # Open the file for binary read
@@ -144,8 +144,17 @@ def compileFile(binderCppFileName, execName):
     # If the compilation succeeds, print "Compilation succeeded"
     # If compilation failed, then print "Compilation failed"
     # Do not forget to add -std=gnu++11 flag to your compilation line
+    cppFile = binderCppFileName
+    outputFile = execName
 
-    GPlusPlusBinary = "/usr/bin/g++"
+    if sys.platform == "linux" or sys.platform == "linux2":
+        GPlusPlusBinary = "/usr/bin/g++"
+    elif sys.platform == "win32":
+        GPlusPlusBinary = "c:/MinGW/bin/g++.exe"
+        cppFile = "win" + cppFile
+        outputFile += ".exe"
+
+
     global FILE_NAME
 
     if not os.path.exists(GPlusPlusBinary):
@@ -153,8 +162,8 @@ def compileFile(binderCppFileName, execName):
         print "\n\nCompilation failed"
         sys.exit(-1)
 
-    if not os.path.exists(binderCppFileName):
-        print "compileFile: " + binderCppFileName + " does not exist"
+    if not os.path.exists(cppFile):
+        print "compileFile: " + cppFile + " does not exist"
         print "\n\nCompilation failed"
         sys.exit(-1)
 
@@ -166,9 +175,9 @@ def compileFile(binderCppFileName, execName):
     # Build out the Command array that will be use by Popen
     CMD = [GPlusPlusBinary]                     # G++ Binary
     CMD.append('-std=gnu++11')                  # -std=gnu++11 option
-    CMD.append(binderCppFileName)               # Binder backend cpp file
+    CMD.append(cppFile)                         # Binder backend cpp file
     CMD.append('-o')                            # output option
-    CMD.append(execName)                        # The output file
+    CMD.append(outputFile)                      # The output file
 
     # Use Popen to get the data result
     try:
