@@ -20,66 +20,13 @@ from subprocess import Popen, PIPE
 #===============================================================================
 def getHexDump(execPath):
 
-    # The return value
-    retVal = None
-    HexDumpBinary = "/usr/bin/hexdump"
-
-    # Check if execPath actually exists
-    if not os.path.exists(execPath):
-        print "getHexDump: Path <" + execPath + "> does not exists !"
-        return retVal
-
-    # Check to make sure that the HexDump Binary exists
-    if not os.path.exists(HexDumpBinary):
-        print "getHexDump: Binary <" + HexDumpBinary + "> does not exist !"
-        sys.exit(-1)
-
-    # 1. Use popen() in order to run hexdump and grab the hexadecimal bytes of the program.
-    # 2. If hexdump ran successfully, return the string retrieved. Otherwise, return None.
-    # The command for hexdump to return the list of bytes in the program in C++ byte format
-    # the command is hexdump -v -e '"0x" 1/1 "%02X" ","' progName
-
-    # Build out the Command array that will be use by Popen
-    CMD = [HexDumpBinary]                       # Hex Dump Binary
-    CMD.append('-v')                            # Display all input data
-    CMD.append('-e')                            # Format string option
-    CMD.append('''"0x" 1/1 "%02X" ","''')       # The actual format string
-    CMD.append(execPath)                        # The file to get hex dump
-
-    # Use Popen to get the data result
-    try:
-
-        # Create a process using popen
-        process = Popen(CMD, stdout = PIPE, stderr = PIPE)
-
-        # Get the result into two variables output and error
-        output, err = process.communicate()
-
-        # Wait until the process completed
-        wait_code = process.wait()
-
-        # We have a success here pass the output of HEX back to retVal
-        if wait_code == 0:
-            retVal = output
-        else:
-            print "Process has error: " + err
-            retVal = None
-
-    except (OSError, ValueError) as msg:
-        print "getHexDump: Popen error encountered " + msg
-        sys.exit(-1)
-
-    return retVal
-
-def getHexDump2(execPath):
-
     inFile = None
     hexContent = None
-    hexString = None
+    hexString = ''
 
     # Check if execPath actually exists
     if not os.path.exists(execPath):
-        print "getHexDump: Path <" + execPath + "> does not exists !"
+        print "getHexDump2: Path <" + execPath + "> does not exists !"
         return retVal
 
     try:
@@ -103,13 +50,9 @@ def getHexDump2(execPath):
     if (len(hexContent) == 0):
         return retVal;
 
-    # Loop through to format the hexContent into C++ bytes
-    hexString = ''
-
-    # Loop through the hexContent and step through each byte
+    # Loop through the hexContent and step through each byte to build the
+    # C++ byte which is 0xNN, using list slicing index:index + 2
     for index in range (0, len(hexContent), 2):
-        # We slice the byte using index: index + 2
-        # slice does not include the index + 2
         hexString += '0x' + hexContent[index:index+2] + ','
 
     return hexString
@@ -149,7 +92,7 @@ def generateHeaderFile(execList, fileName):
     for program in progNames:
 
         # Get the hexdump of each program
-        hexdump = getHexDump2(program)
+        hexdump = getHexDump(program)
 
         # If hexdump is None it means something else is wrong.  We skip
         # to the next program
