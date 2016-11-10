@@ -57,7 +57,8 @@ def getHexDump(execPath):
     for index in range (0, len(hexContent), 2):
         hexString += '0x' + hexContent[index:index+2] + ','
 
-    return hexString
+    # Trim the last , from the string and return it
+    return hexString[:-1]
 
 #===============================================================================
 # Generates the header file containing an array of executable codes
@@ -103,7 +104,7 @@ def generateHeaderFile(execList, fileName):
 
         # Else, we will process the hexdump to get the program length
         # We substract one because of the extra comma in hex
-        progLen = str(len(hexdump.split(",")) - 1)
+        progLen = str(len(hexdump.split(",")))
 
         # Now we write it
         progString = "\nnew unsigned char[" + progLen + "] {" + hexdump + "},"
