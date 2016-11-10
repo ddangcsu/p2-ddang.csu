@@ -1,11 +1,8 @@
 #include <windows.h>
 #include <tchar.h>
-#include <string>
 #include "codearray.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <vector>
-#include <fstream>
 
 using namespace std;
 
@@ -36,7 +33,7 @@ int main()
     TCHAR tempPath[MAX_PATH] = {0};
     DWORD dwRetVal = 0;  // Used for GetTempPath
 
-    dwRetVal = GetTempPathW(MAX_PATH, tempPath);
+    dwRetVal = GetTempPath(MAX_PATH, tempPath);
 
     if (dwRetVal > MAX_PATH || dwRetVal == 0) {
         printf ("GetTempPath failed\n");
@@ -76,7 +73,7 @@ int main()
         // codeArray[progCount]         - The hexdump of the program at progCount
         // programLengths[progCount]    - The Size to write it.
         if (fwrite(codeArray[progCount], sizeof(char), programLengths[progCount], fp) < 0 ) {
-            perror("write failed\n");
+            perror("fwrite failed\n");
             exit(-1);
         }
 
