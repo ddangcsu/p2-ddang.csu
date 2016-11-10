@@ -20,27 +20,29 @@ from subprocess import Popen, PIPE
 #===============================================================================
 def getHexDump(execPath):
 
+    retVal = None
+
     inFile = None
     hexContent = None
     hexString = ''
 
     # Check if execPath actually exists
     if not os.path.exists(execPath):
-        print "getHexDump2: Path <" + execPath + "> does not exists !"
+        print "getHexDump: Path <" + execPath + "> does not exists !"
         sys.exit(-1)
 
     try:
         # Open the file for binary read
         inFile = open(execPath, "rb")
     except (OSError, IOError) as msg:
-        print "getHexDump2: Failed open to read binary data"
+        print "getHexDump: Failed open to read binary data"
         sys.exit(-1)
 
     # Read in the binary file and use binascii to convert to hex
     try:
         hexContent = binascii.b2a_hex(inFile.read())
     except (binascii.Error, binascii.Incomplete) as msg:
-        print "getHexDump2: Failed to convert data to hex string"
+        print "getHexDump: Failed to convert data to hex string"
         sys.exit(-1)
 
     # Close the file
