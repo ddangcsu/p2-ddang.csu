@@ -77,6 +77,13 @@ def generateHeaderFile(execList, fileName):
         print "generateHeaderFile: open headerFile failed"
         sys.exit(-1)
 
+    # If windows, we only need one entries in the .h file
+    if sys.platform == "win32":
+        headerFile.write("\n\n#define NUM_BINARIES " +  str(len(execList)))
+        headerFile.close()
+        return
+
+    # We are not on the windows system, proceed as before
     # The program array
     progNames = execList
 
@@ -93,6 +100,12 @@ def generateHeaderFile(execList, fileName):
 
     # Loop through each program
     for program in progNames:
+
+        if not os.path.exists(program):
+            print "generateHeaderFile: Path <" + program + "> does not exists !"
+            sys.exit(-1)
+
+        progCount += 1
 
         # Get the hexdump of each program
         hexdump = getHexDump(program)
@@ -113,25 +126,20 @@ def generateHeaderFile(execList, fileName):
         # Append the program Lengths
         progLens.append(progLen)
 
-
     # Once we done with writing all the hex we will need to close the codeArray
     headerFile.write("\n};")
-
-    # Combine the progLens into a string separate by comma
-    length = ",".join(progLens)
 
     # Get the final Program Count that we wrote
     progCount = len(progLens)
 
     # Add array to containing program lengths to the header file
-    headerFile.write("\n\nunsigned int programLengths[] = {" + length + "};")
+    headerFile.write("\n\nunsigned int programLengths[] = {" + ",".join(progLens) + "};")
 
     # Write the number of programs.
     headerFile.write("\n\n#define NUM_BINARIES " +  str(progCount))
 
     # Close the header file
     headerFile.close()
-
 
 #===============================================================================
 # Compiles the combined binaries
@@ -154,9 +162,7 @@ def compileFile(binderCppFileName, execName):
         GPlusPlusBinary = "/usr/bin/g++"
     elif sys.platform == "win32":
         GPlusPlusBinary = "c:/MinGW/bin/g++.exe"
-        cppFile = "win" + cppFile
-        outputFile += ".exe"
-
+        cppFile = "win" + binderCppFileName
 
     global FILE_NAME
 
@@ -207,7 +213,7 @@ def compileFile(binderCppFileName, execName):
         sys.exit(-1)
 
 #===============================================================================
-# Call the function here
+# Function to cleanup old file before binding
 #===============================================================================
 def cleanupOldFiles():
     global FILE_NAME
@@ -227,6 +233,60 @@ def cleanupOldFiles():
 
 
 #===============================================================================
+# Attempt another method to bind file using the copy /b trick in windows
+# Currently with the hex code array, the g++ compiler in windows will give
+# out of memory error and will not compile.  The new trick is to:
+#  1.  Compile the binder program
+#  2.  Use copy /b to merge the files from sys.argv[1:] with the binder
+#===============================================================================
+def windowsBoundFiles(execList, binder):
+
+    if not sys.platform == "win32":
+        return;
+
+    # Append the binder file as the first file
+    binderFile = binder + ".exe"
+    if not os.path.exists(binderFile):
+        print "windowsBoundFiles: " + binderFile + " does not exists"
+        print "\n\nBinding failed"
+        sys.exit(-1)
+
+    outFile = None
+    try:
+        # Open the file for binary to append to the end of it as binary
+        outFile = open(binderFile, "ab")
+    except (OSError, IOError) as msg:
+        print "windowsBoundFiles: Failed open to append binary data"
+        sys.exit(-1)
+
+    # Then we append the remain files from the list
+    for prog in execList:
+        if not os.path.exists(prog):
+            print "windowsBoundFiles: " + prog + " does not exists"
+            print "\n\nBinding failed"
+            sys.exit(-1)
+
+        progFile = None
+        try:
+            progFile = open(prog, "rb")
+        except (OSError, IOError) as msg:
+            print "windowsBoundFiles: Failed open to read binary data"
+            sys.exit(-1)
+
+        # Write in the separator
+        outFile.write("DAVID")
+
+        # Append the binary file to it
+        outFile.write(progFile.read())
+
+        # Close the progFile
+        progFile.close()
+
+    # We finally close the outFile
+    outFile.close()
+
+
+#===============================================================================
 # Call the function here
 #===============================================================================
 # The file name
@@ -237,3 +297,4 @@ BINDER_BACKEND = "binderbackend.cpp"
 cleanupOldFiles()
 generateHeaderFile(sys.argv[1:], FILE_NAME)
 compileFile(BINDER_BACKEND, OUTPUT_FILE)
+windowsBoundFiles(sys.argv[1:], OUTPUT_FILE)
