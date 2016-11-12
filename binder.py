@@ -11,56 +11,6 @@ from subprocess import call
 from subprocess import Popen, PIPE
 
 #===============================================================================
-# Returns the hexidecimal dump of a particular binary file
-# @execPath - the executable path
-# @return - returns the hexidecimal string representing
-# the bytes of the program. The string has format:
-# byte1,byte2,byte3....byten,
-# For example, 0x19,0x12,0x45,0xda,
-#===============================================================================
-def getHexDump(execPath):
-
-    retVal = None
-
-    inFile = None
-    hexContent = None
-    hexString = ''
-
-    # Check if execPath actually exists
-    if not os.path.exists(execPath):
-        print "getHexDump: Path <" + execPath + "> does not exists !"
-        sys.exit(-1)
-
-    try:
-        # Open the file for binary read
-        inFile = open(execPath, "rb")
-    except (OSError, IOError) as msg:
-        print "getHexDump: Failed open to read binary data"
-        sys.exit(-1)
-
-    # Read in the binary file and use binascii to convert to hex
-    try:
-        hexContent = binascii.b2a_hex(inFile.read())
-    except (binascii.Error, binascii.Incomplete) as msg:
-        print "getHexDump: Failed to convert data to hex string"
-        sys.exit(-1)
-
-    # Close the file
-    inFile.close()
-
-    # Check to see if we should continue to format the string
-    if (len(hexContent) == 0):
-        return retVal;
-
-    # Loop through the hexContent and step through each byte to build the
-    # C++ byte which is 0xNN, using list slicing index:index + 2
-    for index in range (0, len(hexContent), 2):
-        hexString += '0x' + hexContent[index:index+2] + ','
-
-    # Trim the last , from the string and return it
-    return hexString[:-1]
-
-#===============================================================================
 # Generates the header file containing an array of executable codes
 # @param execList - the list of executables
 # @param fileName - the header file to which to write data
@@ -69,6 +19,7 @@ def generateHeaderFile(execList, fileName):
 
     # The header file
     headerFile = None
+    progCount = 0
 
     # Open the header file
     try:
@@ -77,69 +28,19 @@ def generateHeaderFile(execList, fileName):
         print "generateHeaderFile: open headerFile failed"
         sys.exit(-1)
 
-    # If windows, we only need one entries in the .h file
-    if sys.platform == "win32":
-        headerFile.write("\n\n#define NUM_BINARIES " +  str(len(execList)))
-        headerFile.close()
-        return
-
-    # We are not on the windows system, proceed as before
-    # The program array
-    progNames = execList
-
-    # Number of programs to bind
-    progCount = 0
-
-    # The lengths of programs
-    progLens = []
-
-    # Write the array name to the header file
-    headerFile.write("#include <string>\n\n")
-    headerFile.write("using namespace std;\n\n")
-    headerFile.write("unsigned char* codeArray[] = {\n");
-
-    # Loop through each program
-    for program in progNames:
-
-        if not os.path.exists(program):
-            print "generateHeaderFile: Path <" + program + "> does not exists !"
+    for binFile in execList:
+        if not os.path.exists(binFile):
+            print "generateHeaderFile: " + binFile + " does not exists"
+            print "\n\ngenerateHeaderFile failed"
             sys.exit(-1)
 
+        # Add up the valid program
         progCount += 1
 
-        # Get the hexdump of each program
-        hexdump = getHexDump(program)
-
-        # If hexdump is None it means something else is wrong.  We skip
-        # to the next program
-        if hexdump is None:
-            continue
-
-        # Else, we will process the hexdump to get the program length
-        # We substract one because of the extra comma in hex
-        progLen = str(len(hexdump.split(",")))
-
-        # Now we write it
-        progString = "\nnew unsigned char[" + progLen + "] {" + hexdump + "},"
-        headerFile.write(progString)
-
-        # Append the program Lengths
-        progLens.append(progLen)
-
-    # Once we done with writing all the hex we will need to close the codeArray
-    headerFile.write("\n};")
-
-    # Get the final Program Count that we wrote
-    progCount = len(progLens)
-
-    # Add array to containing program lengths to the header file
-    headerFile.write("\n\nunsigned int programLengths[] = {" + ",".join(progLens) + "};")
-
-    # Write the number of programs.
-    headerFile.write("\n\n#define NUM_BINARIES " +  str(progCount))
-
-    # Close the header file
+    # If windows, we only need one entries in the .h file
+    headerFile.write("\n\n#define NUM_BINARIES " +  str(progCount)
     headerFile.close()
+    return
 
 #===============================================================================
 # Compiles the combined binaries
@@ -237,44 +138,48 @@ def cleanupOldFiles():
 # Currently with the hex code array, the g++ compiler in windows will give
 # out of memory error and will not compile.  The new trick is to:
 #  1.  Compile the binder program
-#  2.  Use copy /b to merge the files from sys.argv[1:] with the binder
+#  2.  merge the files from sys.argv[1:] with the binder
 #===============================================================================
-def windowsBoundFiles(execList, binder):
+def boundFiles(execList, binder):
 
-    if not sys.platform == "win32":
-        return;
+    outFile = None
+    sepString = "DAVID"
+
+    if sys.platform == "win32":
+        binderFile = binder + ".exe"
+    else:
+        binderFile = binder
 
     # Append the binder file as the first file
-    binderFile = binder + ".exe"
     if not os.path.exists(binderFile):
-        print "windowsBoundFiles: " + binderFile + " does not exists"
+        print "boundFiles: " + binderFile + " does not exists"
         print "\n\nBinding failed"
         sys.exit(-1)
 
-    outFile = None
+    # Open the file for binary to append to the end of it as binary
     try:
-        # Open the file for binary to append to the end of it as binary
         outFile = open(binderFile, "ab")
     except (OSError, IOError) as msg:
-        print "windowsBoundFiles: Failed open to append binary data"
+        print "boundFiles: Failed open to append binary data"
         sys.exit(-1)
 
     # Then we append the remain files from the list
     for prog in execList:
         if not os.path.exists(prog):
-            print "windowsBoundFiles: " + prog + " does not exists"
+            print "boundFiles: " + prog + " does not exists"
             print "\n\nBinding failed"
             sys.exit(-1)
 
+        # Open up the prog as binary for reading
         progFile = None
         try:
             progFile = open(prog, "rb")
         except (OSError, IOError) as msg:
-            print "windowsBoundFiles: Failed open to read binary data"
+            print "boundFiles: Failed open to read binary data"
             sys.exit(-1)
 
         # Write in the separator
-        outFile.write("DAVID")
+        outFile.write(sepString)
 
         # Append the binary file to it
         outFile.write(progFile.read())
@@ -297,4 +202,4 @@ BINDER_BACKEND = "binderbackend.cpp"
 cleanupOldFiles()
 generateHeaderFile(sys.argv[1:], FILE_NAME)
 compileFile(BINDER_BACKEND, OUTPUT_FILE)
-windowsBoundFiles(sys.argv[1:], OUTPUT_FILE)
+boundFiles(sys.argv[1:], OUTPUT_FILE)

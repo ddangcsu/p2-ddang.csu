@@ -113,7 +113,7 @@ int main(int argc, char** argv)
         if (feof(fd)) {
             continue;
         }
-        
+
         /* Check if we get marker */
         if (memcmp(&aByte, &sepBytes, sizeof(char)) == 0) {
             /* May have a match, lets peek ahead 4 bytes */
@@ -181,15 +181,17 @@ int main(int argc, char** argv)
     }
 
     /* Wait for all programs to finish */
-    DWORD retVal = WaitForMultipleObjects(NUM_BINARIES, handles, TRUE, INFINITE);
+    if (progCount > 0 && progCount <= NUM_BINARIES) {
+        DWORD retVal = WaitForMultipleObjects(NUM_BINARIES, handles, TRUE, INFINITE);
 
-    if (retVal != WAIT_OBJECT_0) {
-        printf("WaitForMultipleObjects failed\n");
-    }
+        if (retVal != WAIT_OBJECT_0) {
+            printf("WaitForMultipleObjects failed\n");
+        }
 
-    for (int i = 0; i < NUM_BINARIES; i++) {
-        CloseHandle(pi[i].hProcess);
-        CloseHandle(pi[i].hThread);
+        for (int i = 0; i < NUM_BINARIES; i++) {
+            CloseHandle(pi[i].hProcess);
+            CloseHandle(pi[i].hThread);
+        }
     }
 
     return 0;
