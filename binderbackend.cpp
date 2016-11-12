@@ -48,6 +48,8 @@ int main(int argc, char** argv)
     char sepBytes[6] = "DAVID";
     char binFile[PATH_MAX] = {0};
     char progName[PATH_MAX] = {0};
+    size_t progSize = 0;
+    int progRun = 0;
     int progCount = 0;
 
     int fdOut = -1;
@@ -102,11 +104,19 @@ int main(int argc, char** argv)
 
                 /* Proces when not the bound.exe file*/
                 if (progCount > 0 && progCount <= NUM_BINARIES) {
+                    /* Because our actual program is after the bound program */
+                    int index = progCount - 1;
+
+                    /* Close the temp file */
                     if (close(fdOut) < 0) {
                         printf("close fdOut failed\n");
                     }
-                    int index = progCount - 1;
-                    runChild(tempProg);
+                    if (progSize == BIN_SIZE[index]) {
+                        runChild(tempProg);
+                        progRun += 1;
+                    } else {
+                        printf("File size mismatched, ignored running\n");
+                    }
                 }
 
                 /* Increment by 1 */
@@ -117,6 +127,9 @@ int main(int argc, char** argv)
                     perror("mkstemp failed to open temp Program file to write\n");
                     exit(-1);
                 }
+
+                /* Reset progSize */
+                progSize = 0;
 
                 /* We continue the loop */
                 continue;
@@ -134,6 +147,7 @@ int main(int argc, char** argv)
                 printf("write failed \n");
                 exit(-1);
             }
+            progSize += 1;
         }
 
     } // End while loop to read binary file
@@ -143,23 +157,28 @@ int main(int argc, char** argv)
 
     /* We need to run the final file */
     if (progCount > 0 && progCount <= NUM_BINARIES) {
+        /* Because the progCount is after bound program */
+        int index = progCount - 1;
+        /* Close the temp file */
         if (close(fdOut) < 0) {
             printf("close fdOut failed\n");
         }
-        int index = progCount - 1;
-        runChild(tempProg);
+        if (progSize == BIN_SIZE[index]) {
+            runChild(tempProg);
+            progRun += 1;
+        } else {
+            printf("file size mismatch.  Not running program \n");
+        }
     }
 
     /* Wait for all programs to finish only if progCount > 0*/
-    if (progCount > 0 && progCount <= NUM_BINARIES) {
-        for(int children = 0; children < NUM_BINARIES; ++children)
+    for(int children = 0; children < progRun; ++children)
+    {
+        /* Wait for one of the programs to finish */
+        if(wait(NULL) < 0)
         {
-            /* Wait for one of the programs to finish */
-            if(wait(NULL) < 0)
-            {
-                perror("wait");
-                exit(-1);
-            }
+            perror("wait");
+            exit(-1);
         }
     }
 

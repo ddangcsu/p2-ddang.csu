@@ -20,6 +20,28 @@ def generateHeaderFile(execList, fileName):
     # The header file
     headerFile = None
     progCount = 0
+    progLens = ""
+
+    # Process the list of Binaries file
+    for binFile in execList:
+        if not os.path.exists(binFile):
+            print "generateHeaderFile: " + binFile + " does not exists"
+            print "\n\ngenerateHeaderFile failed"
+            sys.exit(-1)
+
+        try:
+            progSize = 0
+            progSize = os.path.getsize(binFile)
+        except OSError as msg:
+            print "generateHeaderFile: failed get size for " + binFile
+            sys.exit(-1)
+
+        # Add up the valid program
+        progCount += 1
+
+        # Add to progLens
+        progLens += str(progSize) + ","
+
 
     # Open the header file
     try:
@@ -28,18 +50,15 @@ def generateHeaderFile(execList, fileName):
         print "generateHeaderFile: open headerFile failed"
         sys.exit(-1)
 
-    for binFile in execList:
-        if not os.path.exists(binFile):
-            print "generateHeaderFile: " + binFile + " does not exists"
-            print "\n\ngenerateHeaderFile failed"
-            sys.exit(-1)
+    headerFile.write("#include <cstddef>\n")
+    headerFile.write("\n\nusing namespace std;")
 
-        # Add up the valid program
-        progCount += 1
-
-    # If windows, we only need one entries in the .h file
+    # We only need one entries in the .h file
+    # Add the programLengths array and the number of binaries
+    headerFile.write("\n\nconst size_t BIN_SIZE[] = {" + progLens[:-1] + "};")
     headerFile.write("\n\n#define NUM_BINARIES " +  str(progCount))
     headerFile.close()
+
     return
 
 #===============================================================================
