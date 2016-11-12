@@ -52,12 +52,12 @@ int main(int argc, char** argv)
 
     /* Get the bound.exe binary file */
     strncpy(binFile, argv[0], MAX_PATH);
-    int fileLen = strlen(binFile);
+    unsigned int fileLen = strlen(binFile);
     char extension[5] = ".exe";
 
     /* Attempt to add .exe to the file if user run it without .exe */
-    if ( memcmp(&binFile + (fileLen - 4), &extension, 4) != 0) {
-        strncat(binFile, ".exe", 5);
+    if (fileLen < 5 || (memcmp( &binFile[fileLen - 4], &extension, 4)) != 0 ) {
+        strncat(binFile, extension, 5);
     }
 
     /* Initialize each of them */
@@ -109,6 +109,11 @@ int main(int argc, char** argv)
             exit(-1);
         }
 
+        /* We reached the end of file.  Do not write the last byte */
+        if (feof(fd)) {
+            continue;
+        }
+        
         /* Check if we get marker */
         if (memcmp(&aByte, &sepBytes, sizeof(char)) == 0) {
             /* May have a match, lets peek ahead 4 bytes */
