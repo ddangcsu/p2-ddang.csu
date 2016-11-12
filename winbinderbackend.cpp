@@ -7,7 +7,9 @@
 
 using namespace std;
 
-void runChild(TCHAR *fileName, int progCount, STARTUPINFO si[], PROCESS_INFORMATION pi[], HANDLE handle[])
+/* Function to Create a new Window Process and run the pass in program */
+void runChild(TCHAR *fileName, int progCount, STARTUPINFO si[],
+    PROCESS_INFORMATION pi[], HANDLE handle[])
 {
     /* Create a process to run the file */
     if (! CreateProcess(
