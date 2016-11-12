@@ -38,7 +38,7 @@ def generateHeaderFile(execList, fileName):
         progCount += 1
 
     # If windows, we only need one entries in the .h file
-    headerFile.write("\n\n#define NUM_BINARIES " +  str(progCount)
+    headerFile.write("\n\n#define NUM_BINARIES " +  str(progCount))
     headerFile.close()
     return
 
