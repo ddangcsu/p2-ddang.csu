@@ -45,7 +45,8 @@ int main(int argc, char** argv)
 {
 
     /* Variables for parsing the binary bound.exe file */
-    char sepBytes[6] = "DAVID";
+    const int MARKER_SIZE = 14;
+    const char sepBytes[MARKER_SIZE] = "@DAVIDCPSC456";
     char binFile[PATH_MAX] = {0};
     char progName[PATH_MAX] = {0};
     size_t progSize = 0;
@@ -92,16 +93,16 @@ int main(int argc, char** argv)
         /* Check if we get marker */
         if (memcmp(&aByte, &sepBytes, sizeof(char)) == 0) {
             /* May have a match, lets peek ahead 4 bytes */
-            char seperator[5] = {0};
+            char seperator[MARKER_SIZE] = {0};
+            seperator[0] = aByte;
 
-            if ( fread(seperator, sizeof(char), 4, fd) < 0) {
+            if ( fread(seperator + 1, sizeof(char), MARKER_SIZE - 2, fd) < 0) {
                 printf ("fread peeking failed \n");
                 exit(-1);
             }
 
             /* See if we got seperator */
-            if ( memcmp(&sepBytes[1], &seperator, 4) == 0) {
-
+            if ( memcmp(&sepBytes, &seperator, MARKER_SIZE - 1) == 0) {
                 /* Proces when not the bound.exe file*/
                 if (progCount > 0 && progCount <= NUM_BINARIES) {
                     /* Because our actual program is after the bound program */

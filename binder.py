@@ -162,7 +162,7 @@ def cleanupOldFiles():
 def boundFiles(execList, binder):
 
     outFile = None
-    sepString = "DAVID"
+    sepString = "@DAVIDCPSC456"
 
     if sys.platform == "win32":
         binderFile = binder + ".exe"

@@ -129,9 +129,9 @@ Windows Version:
        Path c:/MinGW/bin must be added in the PATH environment variable
 
 NOTE:  The bound method with merging binaries relied on a separator marker.
-I put in "DAVID"  as a separator.  If any binaries that coincidentally contain
-that string in the exact format (5 bytes all capitalized), then the bound
-program may break as it split the binary incorrectly.
+I put in "@DAVIDCPSC456" as a separator. If any binaries that coincidentally contain
+that string in the exact format, then the bound program may break as it split
+the binary incorrectly.
 
 ###############################################################################
 #  Observation
