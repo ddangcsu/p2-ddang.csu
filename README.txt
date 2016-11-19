@@ -174,7 +174,6 @@ The directory tree should be as follow:
 
 /<path>/p2-ddang.csu
         |-- README.txt                  - This README file
-        |-- malware.gif                 - Hidden file with EICAR
         |-- result.gif                  - Part 1 result file
         |-- binder.py                   - The binder program
         |-- binderbackend.cpp           - The Linux CPP support backend
