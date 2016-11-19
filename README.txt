@@ -74,9 +74,7 @@ of avoiding detection by anti-virus tools.  As a test, I did the following:
   a)  Turn off antivirus on my Windows 7 VM so that it won't prevent me
       from creating the malicious file
 
-  b)  Create a test file called malware.com that contain the EICAR test.
-      This string is harmless even if run on a machine.
-      X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*
+  b)  Create a test file called malware.com that contain the EICAR test string.
 
   c)  Use 7-zip to create an archive of this file called malware.7z
 
